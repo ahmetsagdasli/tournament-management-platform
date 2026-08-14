@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: tournament_postgres
+    environment:
+      POSTGRES_USER: tournament_user
+      POSTGRES_PASSWORD: tournament_password
+      POSTGRES_DB: tournament_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
+
+volumes:
+  postgres_data:
