@@ -1,5 +1,7 @@
 # Tournament Management Platform
 
+Repo: https://github.com/ahmetsagdasli/tournament-management-platform
+
 A small full-stack tournament platform built with React, TypeScript, Node.js, Express, and PostgreSQL.
 
 The project is intentionally compact. Its main engineering focus is correctness around authentication, validation, database constraints, and concurrent tournament registration.
