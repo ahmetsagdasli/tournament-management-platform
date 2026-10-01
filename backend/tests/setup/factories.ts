@@ -1,9 +1,15 @@
+// Test data builders that insert directly into Postgres, bypassing the
+// HTTP/service layers entirely. Used to set up state a test needs (e.g. "a
+// tournament that is already full") without going through the API for
+// every fixture, which keeps tests focused on the behavior under test.
 import bcrypt from 'bcrypt';
 
 import { env } from '../../src/config/env';
 import { pool } from '../../src/config/db';
 import type { TournamentStatus, UserRole } from '../../src/types/domain';
 
+// Ensures each factory call produces a unique name/email within a single
+// test run, without callers having to invent unique values themselves.
 let counter = 0;
 
 export interface TestUser {
@@ -21,6 +27,8 @@ export interface TestTournament {
   max_players: number;
 }
 
+// Inserts a user directly (real bcrypt hash included, so the returned
+// plaintext `password` can be used to log in via the API in tests).
 export async function createTestUser(overrides: Partial<TestUser> = {}): Promise<TestUser> {
   counter += 1;
 
@@ -49,6 +57,9 @@ export async function createTestUser(overrides: Partial<TestUser> = {}): Promise
   };
 }
 
+// Inserts a tournament directly. Defaults to `starts_at` one day in the
+// future and status OPEN, since most tests care about registration
+// behavior and not about the tournament's own fields.
 export async function createTestTournament(
   overrides: Partial<TestTournament> = {},
 ): Promise<TestTournament> {
@@ -85,6 +96,10 @@ export async function createTestTournament(
   };
 }
 
+// Inserts a registration directly, skipping registerForTournament's
+// capacity/lock logic entirely — useful for tests that need existing
+// registrations set up as a precondition (e.g. "tournament is already
+// full") rather than testing the registration flow itself.
 export async function createTestRegistration(
   userId: string,
   tournamentId: string,

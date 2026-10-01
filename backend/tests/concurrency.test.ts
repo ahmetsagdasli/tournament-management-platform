@@ -1,3 +1,10 @@
+// Verifies the actual claim in the README's "Registration Concurrency"
+// section: many simultaneous registration requests for the same tournament
+// never create more registrations than max_players allows, one user can't
+// end up double-registered, and locking one tournament does not block
+// registrations for a different tournament. `Promise.all` fires every
+// request at once so they genuinely race against each other, exercising
+// the `FOR UPDATE` lock in registrationService.registerForTournament.
 import request from 'supertest';
 
 import { createApp } from '../src/app';
@@ -45,6 +52,9 @@ describe('registration concurrency', () => {
       [tournament.id],
     );
 
+    // Exactly 10 succeed (capacity), the other 15 are rejected as full, and
+    // the database itself agrees there are exactly 10 rows — this is the
+    // core "capacity is never exceeded under concurrency" guarantee.
     expect(createdCount).toBe(10);
     expect(fullCount).toBe(15);
     expect(statuses.every((status) => status === 201 || status === 409)).toBe(true);
@@ -70,6 +80,9 @@ describe('registration concurrency', () => {
       (response) => response.status === 409 && response.body.error.code === 'ALREADY_REGISTERED',
     ).length;
 
+    // Confirms the unique (user_id, tournament_id) constraint holds even
+    // when the same user's requests race each other, not just when two
+    // different users race.
     expect(createdCount).toBe(1);
     expect(alreadyRegisteredCount).toBe(9);
   });
@@ -105,6 +118,9 @@ describe('registration concurrency', () => {
       ),
     ]);
 
+    // All 20 succeed: the FOR UPDATE lock is per tournament row, so
+    // registrations for two different tournaments must not serialize
+    // against each other even though they run at the same time.
     expect(responses.every((response) => response.status === 201)).toBe(true);
   });
 });

@@ -1,3 +1,5 @@
+// Requires a valid `Authorization: Bearer <token>` header and attaches the
+// decoded user to req.user.
 import type { RequestHandler } from 'express';
 
 import { verifyAccessToken } from '../config/jwt';

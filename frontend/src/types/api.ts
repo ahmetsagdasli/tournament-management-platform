@@ -1,6 +1,14 @@
+// Mirrors the backend's response shapes (see backend/src/types/domain.ts
+// and the validators) so the frontend has compile-time checked types for
+// every API response and request body it works with.
 export type UserRole = 'USER' | 'ADMIN';
 export type TournamentStatus = 'OPEN' | 'CLOSED' | 'COMPLETED';
 
+// The normalized shape every rejected API call produces, after
+// api/client.ts's response interceptor runs. `code` is intentionally a
+// plain `string` (not a union) here — the frontend only switches on a
+// handful of specific codes (see ErrorMessage, TournamentDetailsPage) and
+// otherwise just displays `message` as-is.
 export interface ApiError {
   code: string;
   message: string;

@@ -15,6 +15,7 @@ export function signAccessToken(payload: JwtPayload): string {
 export function verifyAccessToken(token: string): AuthenticatedUser {
   const decoded = jwt.verify(token, env.jwtSecret);
 
+  // Narrow jwt.verify's loose return type to our known payload shape.
   if (
     typeof decoded !== 'object' ||
     decoded === null ||

@@ -1,3 +1,8 @@
+// Route guard used to wrap pages that require a logged-in user (and
+// optionally a specific role, e.g. `requireRole="ADMIN"`). This is a UX
+// convenience only — the backend independently enforces the same rules via
+// the `authenticate`/`authorize` middleware, so bypassing this component
+// (e.g. by editing frontend state in DevTools) cannot grant real access.
 import { Navigate, useLocation } from 'react-router-dom';
 
 import { useAuth } from './AuthContext';
@@ -13,11 +18,17 @@ export function ProtectedRoute({
   const { user, loading } = useAuth();
   const location = useLocation();
 
+  // Wait for the initial "is there a valid session" check before deciding
+  // anything, so a logged-in user refreshing the page is never bounced to
+  // /login just because AuthContext hasn't resolved yet.
   if (loading) {
     return <main className="page">Loading...</main>;
   }
 
   if (!user) {
+    // Remembers where the user was trying to go (`state.from`) so
+    // LoginPage can send them back there after a successful login instead
+    // of always landing on the default page.
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 

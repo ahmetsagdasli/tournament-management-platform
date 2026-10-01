@@ -49,6 +49,9 @@ function toRegistration(row: RegistrationRow): Registration {
   };
 }
 
+// Locks the tournament row (see lockTournament below) before counting
+// registrations, so concurrent requests can't both read "spots available"
+// and overbook the tournament. See README's "Registration Concurrency".
 export async function registerForTournament(
   userId: string,
   tournamentId: string,
@@ -179,6 +182,9 @@ export async function listTournamentRegistrations(
   }));
 }
 
+// FOR UPDATE holds a row lock until the transaction ends, so a second
+// concurrent registration for the same tournament blocks here until the
+// first one commits or rolls back. Must be called inside withTransaction.
 async function lockTournament(
   client: PoolClient,
   tournamentId: string,

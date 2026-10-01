@@ -1,3 +1,7 @@
+// End-to-end tests for the tournament CRUD endpoints: ADMIN-only access,
+// status-transition rules, capacity rules, and the registered_count
+// invariants. See concurrency.test.ts and registration.test.ts for the
+// registration endpoint itself.
 import request from 'supertest';
 
 import { createApp } from '../src/app';
@@ -84,6 +88,10 @@ describe('tournaments', () => {
     expect(response.body.error.code).toBe('NOT_FOUND');
   });
 
+  // Exhaustively checks every possible (from, to) pair across the three
+  // statuses against ALLOWED_TRANSITIONS in tournamentService.ts: the two
+  // forward moves (OPEN->CLOSED, CLOSED->COMPLETED) succeed, and all four
+  // backward/skip moves are rejected as 409 INVALID_STATUS_TRANSITION.
   it('all six status transitions behave per the table', async () => {
     const token = await login('ADMIN');
     const openToClosedTournament = await createTestTournament({ status: 'OPEN' });

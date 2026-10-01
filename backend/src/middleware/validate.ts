@@ -1,3 +1,5 @@
+// Parses req.body/params/query with a Zod schema and replaces it with the
+// parsed value (so coercions/transforms take effect).
 import type { RequestHandler } from 'express';
 import type { ZodTypeAny } from 'zod';
 

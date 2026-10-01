@@ -6,6 +6,7 @@ export const tournamentQuerySchema = z.object({
   status: statusSchema.optional(),
 });
 
+// status is not a field here: new tournaments always start OPEN.
 export const createTournamentSchema = z
   .object({
     name: z.string().trim().min(1),
@@ -17,6 +18,8 @@ export const createTournamentSchema = z
   })
   .strict();
 
+// All fields optional (PATCH semantics). Which status transitions are
+// actually legal is enforced in tournamentService.updateTournament.
 export const updateTournamentSchema = z
   .object({
     name: z.string().trim().min(1).optional(),

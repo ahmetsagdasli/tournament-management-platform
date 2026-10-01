@@ -25,6 +25,7 @@ const values = parsedEnv.data;
 export const env = {
   nodeEnv: values.NODE_ENV,
   port: values.PORT,
+  // Test mode always uses TEST_DATABASE_URL so tests never touch dev data.
   databaseUrl: values.NODE_ENV === 'test' ? values.TEST_DATABASE_URL : values.DATABASE_URL,
   jwtSecret: values.JWT_SECRET,
   corsOrigins: values.CORS_ORIGIN.split(',').map((origin) => origin.trim()),

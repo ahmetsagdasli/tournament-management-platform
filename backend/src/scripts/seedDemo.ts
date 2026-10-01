@@ -1,3 +1,9 @@
+// One-off script (`npm run seed:demo`) that populates the database with a
+// handful of demo players, tournaments in each status (OPEN/CLOSED/
+// COMPLETED), and some registrations between them — useful for manually
+// exploring the frontend without registering accounts by hand. Safe to
+// re-run: existing rows are matched by email/name and left as-is or
+// updated rather than duplicated.
 import bcrypt from 'bcrypt';
 import type { PoolClient } from 'pg';
 
@@ -53,6 +59,10 @@ const demoTournaments: DemoTournament[] = [
     name: 'Autumn Board Game Finals',
     description: 'Completed tabletop finals kept for historical browsing.',
     max_players: 12,
+    // Negative offset: this tournament already happened, matching its
+    // COMPLETED status. createTournamentSchema would reject a past
+    // starts_at, but this script writes directly via SQL and bypasses that
+    // API-level validation on purpose.
     starts_at: daysFromNow(-6),
     status: 'COMPLETED',
   },
@@ -61,7 +71,13 @@ const demoTournaments: DemoTournament[] = [
 async function main(): Promise<void> {
   const passwordHash = await bcrypt.hash('Password123', env.bcryptCost);
 
+  // Everything happens in one transaction so a failure partway through
+  // (e.g. a missing lookup in `register`) leaves the database untouched
+  // instead of half-seeded.
   await withTransaction(async (client) => {
+    // Maps from a stable key (email / tournament name) to the row's
+    // generated UUID, so `register` below can look up ids by name instead
+    // of threading id variables through every call site.
     const users = new Map<string, string>();
     const tournaments = new Map<string, string>();
 
@@ -121,6 +137,9 @@ async function main(): Promise<void> {
   console.log('Seeded demo tournaments, players, and registrations');
 }
 
+// Looks up a demo user/tournament by their stable keys and inserts a
+// registration, ignoring the insert if it already exists (so re-running
+// the script is a no-op rather than an error).
 async function register(
   client: PoolClient,
   users: Map<string, string>,

@@ -1,3 +1,4 @@
+// Role-based access check. Must run after `authenticate`.
 import type { RequestHandler } from 'express';
 
 import { AppError } from '../errors/AppError';

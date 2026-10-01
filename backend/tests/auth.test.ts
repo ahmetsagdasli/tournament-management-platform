@@ -1,3 +1,6 @@
+// End-to-end tests for register/login/me, driven through the real HTTP
+// layer with supertest (not by calling the service functions directly), so
+// they also exercise validation and the error-mapping middleware.
 import request from 'supertest';
 
 import { createApp } from '../src/app';

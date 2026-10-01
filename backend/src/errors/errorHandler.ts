@@ -1,8 +1,10 @@
+// Central Express error handler, registered last in app.ts.
 import type { ErrorRequestHandler } from 'express';
 import { ZodError } from 'zod';
 
 import { AppError } from './AppError';
 
+// Postgres error codes are strings, e.g. '23505' (unique_violation).
 type PgError = Error & {
   code?: string;
   constraint?: string;
@@ -35,6 +37,8 @@ export const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
     return;
   }
 
+  // Map DB constraint violations to stable error codes instead of leaking
+  // raw Postgres errors.
   if (isPgError(error)) {
     if (error.code === '23505' && error.constraint === 'users_email_key') {
       res.status(409).json({

@@ -1,3 +1,7 @@
+// Thin, typed wrappers around every backend endpoint the frontend calls.
+// Each function unwraps the response envelope (e.g. `{ tournament }` ->
+// `Tournament`) so pages/hooks work with plain domain objects instead of
+// axios response objects.
 import { apiClient } from './client';
 import type {
   AuthResponse,
@@ -23,11 +27,16 @@ export async function login(input: LoginInput): Promise<AuthResponse> {
   return response.data;
 }
 
+// Fetches the current user for the token already attached by the request
+// interceptor. Used by AuthContext on app load to check whether a stored
+// token is still valid.
 export async function getMe(): Promise<User> {
   const response = await apiClient.get<{ user: User }>('/api/auth/me');
   return response.data.user;
 }
 
+// `status` is optional — omitting it returns tournaments in every status,
+// matching the backend's `tournamentQuerySchema`.
 export async function listTournaments(status?: TournamentStatus): Promise<Tournament[]> {
   const response = await apiClient.get<{ tournaments: Tournament[] }>('/api/tournaments', {
     params: status ? { status } : undefined,
@@ -56,10 +65,15 @@ export async function updateTournament(
   return response.data.tournament;
 }
 
+// The backend returns 204 No Content on success, so there is no body to
+// unwrap here — a rejected promise (via the response interceptor) is how
+// callers find out about the 409 HAS_REGISTRATIONS case.
 export async function deleteTournament(id: string): Promise<void> {
   await apiClient.delete(`/api/tournaments/${id}`);
 }
 
+// No request body is needed — the backend takes the registering user from
+// the JWT, not from anything the client sends (see registrationController).
 export async function registerForTournament(id: string): Promise<Registration> {
   const response = await apiClient.post<{ registration: Registration }>(
     `/api/tournaments/${id}/register`,

@@ -13,6 +13,7 @@ export async function login(req: Request, res: Response): Promise<void> {
   res.status(200).json(result);
 }
 
+// req.user! is safe: this route sits behind the authenticate middleware.
 export async function me(req: Request, res: Response): Promise<void> {
   const user = await getCurrentUser(req.user!.sub);
   res.status(200).json({ user });

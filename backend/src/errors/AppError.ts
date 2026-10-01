@@ -1,3 +1,4 @@
+// All machine-readable error codes the API can return.
 export type ErrorCode =
   | 'ALREADY_REGISTERED'
   | 'CAPACITY_BELOW_REGISTRATIONS'
@@ -13,6 +14,8 @@ export type ErrorCode =
   | 'UNAUTHORIZED'
   | 'VALIDATION_ERROR';
 
+// Thrown error carrying the status/code/message errorHandler.ts turns into
+// the API's standard error response.
 export class AppError extends Error {
   constructor(
     public readonly statusCode: number,

@@ -8,12 +8,18 @@ import {
   type ReactNode,
 } from 'react';
 
+// App-wide auth state: who is logged in (if anyone), plus login/register/
+// logout actions. The JWT itself lives in localStorage (see api/client.ts),
+// not in this state — `user` is just what the UI renders based on it.
 import { onUnauthorized, TOKEN_STORAGE_KEY } from '../api/client';
 import * as api from '../api/services';
 import type { LoginInput, RegisterInput, User } from '../types/api';
 
 interface AuthContextValue {
   user: User | null;
+  // True only while the initial "is there a valid stored token" check is
+  // in flight. Consumers (App.tsx's nav, ProtectedRoute) use this to avoid
+  // flashing a logged-out UI before that check resolves.
   loading: boolean;
   login: (input: LoginInput) => Promise<void>;
   register: (input: RegisterInput) => Promise<void>;
@@ -26,6 +32,11 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // On mount, if a token was left over from a previous session, validate it
+  // against the backend (rather than trusting it blindly) and hydrate
+  // `user` from the response. An invalid/expired token is cleared silently
+  // instead of showing an error, since "please log in" is the expected
+  // state for an expired session, not a failure to report.
   useEffect(() => {
     let cancelled = false;
 
@@ -63,6 +74,12 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     };
   }, []);
 
+  // Keeps `user` in sync if the token becomes invalid *during* the session
+  // (e.g. it expires while the tab is open, or the backend otherwise
+  // rejects it) rather than only checking once on mount. Without this, the
+  // UI would keep showing the user as logged in — Logout button, role chip,
+  // admin links — while every subsequent request silently fails, until the
+  // page happens to be reloaded.
   useEffect(() => onUnauthorized(() => setUser(null)), []);
 
   const login = useCallback(async (input: LoginInput) => {
@@ -90,6 +107,9 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// Access point for the context. Throws instead of returning a possibly-null
+// value so a page cannot forget the AuthProvider wrapper and silently get
+// `undefined` behavior — the error surfaces immediately, at the call site.
 export function useAuth(): AuthContextValue {
   const context = useContext(AuthContext);
 

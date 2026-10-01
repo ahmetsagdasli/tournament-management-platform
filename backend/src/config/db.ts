@@ -6,6 +6,7 @@ export const pool = new Pool({
   connectionString: env.databaseUrl,
 });
 
+// Runs callback inside BEGIN/COMMIT, rolling back on error.
 export async function withTransaction<T>(
   callback: (client: PoolClient) => Promise<T>,
 ): Promise<T> {

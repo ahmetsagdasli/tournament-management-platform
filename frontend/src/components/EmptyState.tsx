@@ -1,5 +1,8 @@
 import { Link } from 'react-router-dom';
 
+// Generic "nothing here yet" placeholder with an optional call to action —
+// either a route link (`actionTo`) or a click handler (`actionOnClick`),
+// e.g. clearing filters in place vs. navigating to another page.
 export function EmptyState({
   title,
   message,

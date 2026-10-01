@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+// 72 chars is bcrypt's input limit.
 const passwordSchema = z
   .string()
   .min(8)

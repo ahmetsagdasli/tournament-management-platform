@@ -1,3 +1,7 @@
+// Sequential (non-concurrent) tests for the registration endpoint: the
+// happy path, each business-rule rejection (already registered, full,
+// tournament not open), and that a caller can never register on someone
+// else's behalf. See concurrency.test.ts for the race-condition tests.
 import request from 'supertest';
 
 import { createApp } from '../src/app';
@@ -10,6 +14,8 @@ import {
 
 const app = createApp();
 
+// Logs in via the real /api/auth/login endpoint to get a usable JWT,
+// rather than signing one directly, so tests match what a real client does.
 async function tokenForUser(user: { email: string; password: string }): Promise<string> {
   const response = await request(app).post('/api/auth/login').send({
     email: user.email,

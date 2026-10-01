@@ -18,12 +18,15 @@ interface TournamentRow {
   registered_count: number;
 }
 
+// Status only ever moves forward: OPEN -> CLOSED -> COMPLETED.
 const ALLOWED_TRANSITIONS: Record<TournamentStatus, TournamentStatus[]> = {
   OPEN: ['CLOSED'],
   CLOSED: ['COMPLETED'],
   COMPLETED: [],
 };
 
+// Maps UpdateTournamentInput fields to column names for the dynamic SET
+// clause in updateTournament.
 const UPDATABLE_COLUMNS = [
   ['name', 'name'],
   ['description', 'description'],
@@ -86,6 +89,7 @@ export async function getTournament(id: string): Promise<Tournament> {
   return tournament;
 }
 
+// ADMIN-only. New tournaments always start OPEN (table default).
 export async function createTournament(input: CreateTournamentInput): Promise<Tournament> {
   const result = await pool.query<TournamentRow>(
     `
@@ -107,6 +111,9 @@ export async function createTournament(input: CreateTournamentInput): Promise<To
   return toTournament(result.rows[0]!);
 }
 
+// ADMIN-only. Enforces two invariants a plain UPDATE can't: status can only
+// move forward (ALLOWED_TRANSITIONS), and capacity can't drop below the
+// current registration count.
 export async function updateTournament(
   id: string,
   input: UpdateTournamentInput,
@@ -132,6 +139,7 @@ export async function updateTournament(
     );
   }
 
+  // Build SET col = $1, ... only for fields that were actually provided.
   const values: unknown[] = [];
   const assignments: string[] = [];
 
@@ -169,6 +177,9 @@ export async function updateTournament(
   return toTournament(result.rows[0]!);
 }
 
+// ADMIN-only. Blocked once anyone has registered, so a tournament's
+// registration history can't be silently wiped (registrations cascade-
+// delete otherwise).
 export async function deleteTournament(id: string): Promise<void> {
   const tournament = await getTournament(id);
 

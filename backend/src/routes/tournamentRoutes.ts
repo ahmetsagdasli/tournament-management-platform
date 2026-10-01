@@ -16,8 +16,14 @@ import {
   updateTournamentSchema,
 } from '../validators/tournamentValidators';
 
+// Mounted at /api/tournaments in app.ts. Every protected route composes the
+// same pieces in the same order: authenticate -> authorize -> validate ->
+// asyncHandler(controller), matching the layering described in the README.
+// The two public GET routes below skip authenticate/authorize entirely.
 export const tournamentRoutes = Router();
 
+// Browsing tournaments (list, single, and joining one) is public or only
+// requires being logged in — no ADMIN check on these three.
 tournamentRoutes.get('/', validate(tournamentQuerySchema, 'query'), asyncHandler(list));
 tournamentRoutes.get('/:id', validate(idParamsSchema, 'params'), asyncHandler(getById));
 tournamentRoutes.get(
@@ -33,6 +39,7 @@ tournamentRoutes.post(
   validate(idParamsSchema, 'params'),
   asyncHandler(registerForTournament),
 );
+// Everything below manages tournaments themselves and is ADMIN-only.
 tournamentRoutes.post(
   '/',
   authenticate,

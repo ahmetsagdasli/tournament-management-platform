@@ -7,7 +7,11 @@ import { AppError } from '../errors/AppError';
 import type { PublicUser, UserRole } from '../types/domain';
 import type { LoginInput, RegisterInput } from '../validators/authValidators';
 
+// Same message for "unknown email" and "wrong password" so login never
+// reveals whether an email is registered.
 const INVALID_CREDENTIALS_MESSAGE = 'Invalid email or password';
+// Dummy hash used to keep login timing similar when the email doesn't
+// exist (see loginUser). Matches no real password.
 const DUMMY_PASSWORD_HASH = '$2b$10$CwTycUXWue0Thq9StjUM0uJ8XYCK9mPQUE2ihbZq48nn1gGyKhveS';
 
 interface UserRow {
@@ -19,6 +23,7 @@ interface UserRow {
   created_at: Date;
 }
 
+// Strips password_hash before a user leaves the service layer.
 function toPublicUser(row: Omit<UserRow, 'password_hash'>): PublicUser {
   return {
     id: row.id,
@@ -32,6 +37,8 @@ function toPublicUser(row: Omit<UserRow, 'password_hash'>): PublicUser {
 export async function registerUser(input: RegisterInput): Promise<{ user: PublicUser; token: string }> {
   const passwordHash = await bcrypt.hash(input.password, env.bcryptCost);
 
+  // Duplicate email throws a unique_violation, mapped to 409 EMAIL_TAKEN
+  // by errorHandler.ts.
   const result = await pool.query<Omit<UserRow, 'password_hash'>>(
     `
       INSERT INTO users (name, email, password_hash, role)
@@ -58,6 +65,8 @@ export async function loginUser(input: LoginInput): Promise<{ user: PublicUser; 
   );
 
   const userRow = result.rows[0];
+  // Compare against a dummy hash when the user doesn't exist, so the
+  // response timing doesn't leak whether the email is registered.
   const hashToCompare = userRow?.password_hash ?? DUMMY_PASSWORD_HASH;
   const passwordMatches = await bcrypt.compare(input.password, hashToCompare);
 
